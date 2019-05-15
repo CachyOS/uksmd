@@ -1,14 +1,15 @@
 PROG = uksmd
 OBJS = uksmd.o
 PREFIX ?= /usr/local
-CFLAGS ?= -O3 -Wall -Wextra -pedantic
+CFLAGS ?= -O0 -Wall -Wextra -pedantic -ggdb
+LDFLAGS ?= -lprocps
 
 all: build
 
 build: $(PROG)
 
 $(PROG): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $@
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
