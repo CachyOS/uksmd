@@ -1,25 +1,102 @@
 #include <errno.h>
+#include <fcntl.h>
 #include <proc/readproc.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sysexits.h>
 #include <time.h>
-#include <unistd.h>
 
+#define KSM_RUN		"/sys/kernel/mm/ksm/run"
+#define KSM_ADVISE		"/proc/%d/ksm"
 #define OBSERVE_WINDOW_SECS	10
-#define IDLE_SLEEP_SECS		5
+#define IDLE_SLEEP_SECS	5
+
+static int ksm_ctl(bool _enable)
+{
+	int ret = 0;
+
+	int fd = open(KSM_RUN, O_WRONLY);
+	if (fd == -1)
+	{
+		ret = errno;
+		goto out;
+	}
+
+	if (write(fd, _enable ? "1" : "0", 1) == -1)
+	{
+		ret = errno;
+		goto close_fd;
+	}
+
+close_fd:
+	close(fd);
+
+out:
+	return ret;
+}
+
+static int ksm_advise(pid_t pid, bool _merge)
+{
+	int ret = 0;
+	char path[PATH_MAX];
+	int fd;
+
+	ret = snprintf(path, sizeof(path), KSM_ADVISE, pid);
+	if (ret < 0)
+	{
+		ret = EINVAL;
+		goto out;
+	}
+
+	fd = open(path, O_WRONLY);
+	if (fd == -1)
+	{
+		ret = errno;
+		goto out;
+	}
+
+	ret = write(fd, _merge ? "merge" : "unmerge", 1);
+	if (ret == -1)
+	{
+		ret = errno;
+		goto close_fd;
+	}
+
+close_fd:
+	close(fd);
+
+out:
+	return ret;
+}
 
 int main(int _argc, char** _argv)
 {
 	(void)_argc;
 	(void)_argv;
-	pid_t self = getpid();
-	long ctps = sysconf(_SC_CLK_TCK);
+	int ret;
+	pid_t self;
+	long ctps;
 	proc_t proc_info;
 	struct timespec now;
 	unsigned int time_to_sleep;
+
+	if (getuid())
+	{
+		ret = EACCES;
+		fprintf(stderr, "%s\n", strerror(ret));
+		goto out;
+	}
+
+	self = getpid();
+	ctps = sysconf(_SC_CLK_TCK);
+
+	ret = ksm_ctl(true);
+	if (ret)
+	{
+		fprintf(stderr, "%s\n", strerror(ret));
+		goto out;
+	}
 
 	while (true)
 	{
@@ -42,7 +119,8 @@ int main(int _argc, char** _argv)
 			if (now.tv_sec - proc_info.start_time / ctps < OBSERVE_WINDOW_SECS)
 				continue;
 
-			printf("%u\t%s\n", proc_info.tid, proc_info.cmd);
+			if (ksm_advise(proc_info.tid, true))
+				continue;
 		}
 		closeproc(proc);
 
@@ -51,6 +129,14 @@ int main(int _argc, char** _argv)
 			continue;
 	}
 
-	exit(EX_OK);
+	ret = ksm_ctl(false);
+	if (ret)
+	{
+		fprintf(stderr, "%s\n", strerror(ret));
+		goto out;
+	}
+
+out:
+	exit(ret);
 }
 
