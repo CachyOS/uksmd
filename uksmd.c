@@ -56,7 +56,7 @@ static int ksm_advise(pid_t pid, bool _merge)
 		goto out;
 	}
 
-	ret = write(fd, _merge ? "merge" : "unmerge", 1);
+	ret = write(fd, _merge ? "merge" : "unmerge", _merge ? 5 : 7);
 	if (ret == -1)
 	{
 		ret = errno;
