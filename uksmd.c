@@ -91,6 +91,14 @@ int main(int _argc, char** _argv)
 		goto out;
 	}
 
+	ret = daemon(0, 0);
+	if (ret == -1)
+	{
+		ret = errno;
+		fprintf(stderr, "daemon: %s\n", strerror(ret));
+		goto out;
+	}
+
 	self = getpid();
 	ctps = sysconf(_SC_CLK_TCK);
 
