@@ -87,7 +87,7 @@ int main(int _argc, char** _argv)
 	if (getuid())
 	{
 		ret = EACCES;
-		fprintf(stderr, "%s\n", strerror(ret));
+		fprintf(stderr, "getuid: %s (root privileges required)\n", strerror(ret));
 		goto out;
 	}
 
@@ -97,7 +97,7 @@ int main(int _argc, char** _argv)
 	ret = ksm_ctl(true);
 	if (ret)
 	{
-		fprintf(stderr, "%s\n", strerror(ret));
+		fprintf(stderr, "ksm_ctl: %s\n", strerror(ret));
 		goto out;
 	}
 
@@ -108,7 +108,7 @@ int main(int _argc, char** _argv)
 	if (ret == -1)
 	{
 		ret = errno;
-		fprintf(stderr, "%s\n", strerror(ret));
+		fprintf(stderr, "sigprocmask: %s\n", strerror(ret));
 		goto ksm_ctl_false;
 	}
 
@@ -151,14 +151,15 @@ int main(int _argc, char** _argv)
 			{
 				case EINVAL:
 					ret = errno;
-					fprintf(stderr, "%s\n", strerror(ret));
+					fprintf(stderr, "sigtimedwait: %s\n", strerror(ret));
 					goto unblock_signals;
 				case EINTR:
 					ret = errno;
-					fprintf(stderr, "An unblocked signal has been caught\n");
+					fprintf(stderr, "sigtimedwait: an unblocked signal has been caught\n");
 					goto unblock_signals;
 					break;
 				case EAGAIN:
+					/* timeout, just continuing */
 					continue;
 			}
 		}
@@ -169,7 +170,7 @@ unblock_signals:
 	if (ret == -1)
 	{
 		ret = errno;
-		fprintf(stderr, "%s\n", strerror(ret));
+		fprintf(stderr, "sigprocmask: %s\n", strerror(ret));
 		goto ksm_ctl_false;
 	}
 
@@ -177,7 +178,7 @@ ksm_ctl_false:
 	ret = ksm_ctl(false);
 	if (ret)
 	{
-		fprintf(stderr, "%s\n", strerror(ret));
+		fprintf(stderr, "ksm_ctl: %s\n", strerror(ret));
 		goto out;
 	}
 
