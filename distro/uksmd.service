@@ -1,0 +1,9 @@
+[Unit]
+Description=Userspace KSM helper daemon
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/uksmd
+
+[Install]
+WantedBy=multi-user.target
