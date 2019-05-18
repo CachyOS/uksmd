@@ -83,6 +83,7 @@ int main(int _argc, char** _argv)
 	proc_t proc_info;
 	struct timespec now;
 	struct timespec time_to_sleep;
+	siginfo_t siginfo;
 
 	if (getuid())
 	{
@@ -148,7 +149,7 @@ int main(int _argc, char** _argv)
 
 		time_to_sleep.tv_sec = IDLE_SLEEP_SECS;
 		time_to_sleep.tv_nsec = 0;
-		ret = sigtimedwait(&sigmask, NULL, &time_to_sleep);
+		ret = sigtimedwait(&sigmask, &siginfo, &time_to_sleep);
 		if (ret == SIGINT || ret == SIGTERM)
 		{
 			printf("Caught signal %d, shutting down gracefully...\n", ret);
@@ -162,9 +163,16 @@ int main(int _argc, char** _argv)
 					fprintf(stderr, "sigtimedwait: %s\n", strerror(ret));
 					goto unblock_signals;
 				case EINTR:
-					ret = errno;
-					fprintf(stderr, "sigtimedwait: an unblocked signal has been caught\n");
-					goto unblock_signals;
+					if (!siginfo.si_signo)
+					{
+						printf("Are we being traced?\n");
+						continue;
+					} else
+					{
+						ret = errno;
+						fprintf(stderr, "sigtimedwait: an unblocked signal %d has been caught\n", siginfo.si_signo);
+						goto unblock_signals;
+					}
 					break;
 				case EAGAIN:
 					/* timeout, just continuing */
