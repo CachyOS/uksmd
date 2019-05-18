@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <proc/readproc.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,9 +78,11 @@ int main(int _argc, char** _argv)
 	int ret;
 	pid_t self;
 	long ctps;
+	sigset_t sigmask;
+	sigset_t sigorigmask;
 	proc_t proc_info;
 	struct timespec now;
-	unsigned int time_to_sleep;
+	struct timespec time_to_sleep;
 
 	if (getuid())
 	{
@@ -96,6 +99,17 @@ int main(int _argc, char** _argv)
 	{
 		fprintf(stderr, "%s\n", strerror(ret));
 		goto out;
+	}
+
+	sigemptyset(&sigmask);
+	sigaddset(&sigmask, SIGINT);
+	sigaddset(&sigmask, SIGTERM);
+	ret = sigprocmask(SIG_BLOCK, &sigmask, &sigorigmask);
+	if (ret == -1)
+	{
+		ret = errno;
+		fprintf(stderr, "%s\n", strerror(ret));
+		goto ksm_ctl_false;
 	}
 
 	while (true)
@@ -124,11 +138,42 @@ int main(int _argc, char** _argv)
 		}
 		closeproc(proc);
 
-		time_to_sleep = IDLE_SLEEP_SECS;
-		while ((time_to_sleep = sleep(time_to_sleep)) && errno == EINTR)
-			continue;
+		time_to_sleep.tv_sec = IDLE_SLEEP_SECS;
+		time_to_sleep.tv_nsec = 0;
+		ret = sigtimedwait(&sigmask, NULL, &time_to_sleep);
+		if (ret == SIGINT || ret == SIGTERM)
+		{
+			printf("Caught signal %d, shutting down gracefully...\n", ret);
+			goto unblock_signals;
+		} else if (ret == -1)
+		{
+			switch (errno)
+			{
+				case EINVAL:
+					ret = errno;
+					fprintf(stderr, "%s\n", strerror(ret));
+					goto unblock_signals;
+				case EINTR:
+					ret = errno;
+					fprintf(stderr, "An unblocked signal has been caught\n");
+					goto unblock_signals;
+					break;
+				case EAGAIN:
+					continue;
+			}
+		}
 	}
 
+unblock_signals:
+	ret = sigprocmask(SIG_SETMASK, &sigorigmask, NULL);
+	if (ret == -1)
+	{
+		ret = errno;
+		fprintf(stderr, "%s\n", strerror(ret));
+		goto ksm_ctl_false;
+	}
+
+ksm_ctl_false:
 	ret = ksm_ctl(false);
 	if (ret)
 	{
