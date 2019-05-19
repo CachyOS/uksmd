@@ -23,12 +23,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/resource.h>
 #include <time.h>
 
 #define KSM_RUN		"/sys/kernel/mm/ksm/run"
 #define KSM_ADVISE		"/proc/%d/ksm"
 #define OBSERVE_WINDOW_SECS	10
 #define IDLE_SLEEP_SECS	5
+#define NICENESS		5
 
 static int ksm_ctl(bool _enable)
 {
@@ -106,6 +108,14 @@ int main(int _argc, char** _argv)
 	{
 		ret = EACCES;
 		fprintf(stderr, "getuid: %s (root privileges required)\n", strerror(ret));
+		goto out;
+	}
+
+	ret = setpriority(PRIO_PROCESS, 0, NICENESS);
+	if (ret == -1 && errno)
+	{
+		ret = errno;
+		fprintf(stderr, "setpriority: %s\n", strerror(ret));
 		goto out;
 	}
 
