@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cap-ng.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <proc/readproc.h>
@@ -104,10 +105,24 @@ int main(int _argc, char** _argv)
 	struct timespec time_to_sleep;
 	siginfo_t siginfo;
 
-	if (getuid())
+	if (capng_get_caps_process() == -1)
+	{
+		ret = ENODATA;
+		fprintf(stderr, "Unable to get capabilities\n");
+		goto out;
+	}
+
+	if (!capng_have_capability(CAPNG_EFFECTIVE, CAP_SYS_PTRACE))
 	{
 		ret = EACCES;
-		fprintf(stderr, "getuid: %s (root privileges required)\n", strerror(ret));
+		fprintf(stderr, "capabilities: CAP_SYS_PTRACE required\n");
+		goto out;
+	}
+
+	if (!capng_have_capability(CAPNG_EFFECTIVE, CAP_DAC_OVERRIDE))
+	{
+		ret = EACCES;
+		fprintf(stderr, "capabilities: CAP_DAC_OVERRIDE required\n");
 		goto out;
 	}
 

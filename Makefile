@@ -2,7 +2,7 @@ PROG = uksmd
 OBJS = uksmd.o
 PREFIX ?= /usr/local
 CFLAGS = -O3 -Wall -Wextra -pedantic -pipe -fstack-protector-strong -fno-plt
-LDFLAGS = -lprocps
+LDFLAGS = -lprocps -lcap-ng
 
 all: build
 
