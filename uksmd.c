@@ -18,6 +18,7 @@
 #include <cap-ng.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <proc/readproc.h>
 #include <signal.h>
 #include <stdbool.h>
