@@ -30,9 +30,9 @@
 
 #define KSM_RUN		"/sys/kernel/mm/ksm/run"
 #define KSM_ADVISE		"/proc/%d/ksm"
+#define KSMD_CMD		"ksmd"
 #define OBSERVE_WINDOW_SECS	10
 #define IDLE_SLEEP_SECS	5
-#define NICENESS		5
 
 static int ksm_ctl(bool _enable)
 {
@@ -92,11 +92,35 @@ out:
 	return ret;
 }
 
+static int kthread_niceness(const char* _name)
+{
+	int ret = -1;
+	proc_t proc_info = { 0, };
+
+	PROCTAB* proc = openproc(PROC_FILLSTAT);
+	while (readproc(proc, &proc_info) != NULL)
+	{
+		/* skip uthreads */
+		if (proc_info.vm_size)
+			continue;
+
+		if (!strcmp(_name, proc_info.cmd))
+		{
+			ret = proc_info.nice;
+			break;
+		}
+	}
+	closeproc(proc);
+
+	return ret;
+}
+
 int main(int _argc, char** _argv)
 {
 	(void)_argc;
 	(void)_argv;
 	int ret;
+	int ksmd_niceness;
 	pid_t self;
 	long ctps;
 	sigset_t sigmask;
@@ -127,7 +151,15 @@ int main(int _argc, char** _argv)
 		goto out;
 	}
 
-	ret = setpriority(PRIO_PROCESS, 0, NICENESS);
+	ksmd_niceness = kthread_niceness("ksmd");
+	if (ksmd_niceness == -1)
+	{
+		ret = ESRCH;
+		fprintf(stderr, "Unable to get ksmd niceness\n");
+		goto out;
+	}
+
+	ret = setpriority(PRIO_PROCESS, 0, ksmd_niceness);
 	if (ret == -1 && errno)
 	{
 		ret = errno;
