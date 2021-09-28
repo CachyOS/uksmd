@@ -1,5 +1,6 @@
 [Unit]
 Description=Userspace KSM helper daemon
+Documentation=https://gitlab.com/post-factum/uksmd
 ConditionPathExists=/proc/self/ksm
 
 [Service]
