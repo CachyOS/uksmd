@@ -305,7 +305,7 @@ int main(int _argc, char** _argv)
 					fprintf(stderr, "sigtimedwait: %s\n", strerror(ret));
 					goto unblock_signals;
 				case EINTR:
-					if (!siginfo.si_signo)
+					if (!siginfo.si_signo || siginfo.si_signo == SIGQUIT)
 					{
 						printf("Are we being traced?\n");
 						continue;
