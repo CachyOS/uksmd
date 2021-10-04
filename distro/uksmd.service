@@ -30,6 +30,7 @@ RestrictRealtime=true
 LockPersonality=true
 MemoryDenyWriteExecute=true
 RemoveIPC=true
+TasksMax=2
 UMask=0176
 ProtectHostname=true
 IPAddressDeny=any
