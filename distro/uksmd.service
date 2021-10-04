@@ -1,20 +1,19 @@
 [Unit]
 Description=Userspace KSM helper daemon
 Documentation=https://gitlab.com/post-factum/uksmd
-ConditionPathExists=/proc/self/ksm
+ConditionPathExists=/sys/kernel/pmadv/ksm
 
 [Service]
 Type=forking
+DynamicUser=true
 User=uksmd
 Group=uksmd
-DynamicUser=true
-CapabilityBoundingSet=CAP_SYS_PTRACE CAP_DAC_OVERRIDE
-AmbientCapabilities=CAP_SYS_PTRACE CAP_DAC_OVERRIDE
+CapabilityBoundingSet=CAP_SYS_PTRACE CAP_DAC_OVERRIDE CAP_SYS_NICE
+AmbientCapabilities=CAP_SYS_PTRACE CAP_DAC_OVERRIDE CAP_SYS_NICE
 PrivateNetwork=yes
 RestrictAddressFamilies=none
 RestrictNamespaces=true
 PrivateDevices=true
-DevicePolicy=closed
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectClock=true
@@ -31,7 +30,7 @@ RestrictRealtime=true
 LockPersonality=true
 MemoryDenyWriteExecute=true
 RemoveIPC=true
-UMask=066
+UMask=0176
 ProtectHostname=true
 IPAddressDeny=any
 SystemCallFilter=@system-service

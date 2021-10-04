@@ -25,14 +25,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <sys/resource.h>
 #include <time.h>
+#include <unistd.h>
 
 #define KSM_RUN		"/sys/kernel/mm/ksm/run"
-#define KSM_ADVISE		"/proc/%d/ksm"
 #define KSMD_CMD		"ksmd"
 #define OBSERVE_WINDOW_SECS	10
 #define IDLE_SLEEP_SECS	5
+
+#ifndef __NR_pidfd_open
+#define __NR_pidfd_open 434	/* System call # on most architectures */
+#endif
+
+#define __SYSFS_pmadv_ksm	"/sys/kernel/pmadv/ksm"
+
+static int __NR_pmadv_ksm = -1;
 
 static int ksm_ctl(bool _enable)
 {
@@ -58,35 +67,42 @@ out:
 	return ret;
 }
 
+static int pidfd_open(pid_t pid, unsigned int flags)
+{
+	return syscall(__NR_pidfd_open, pid, flags);
+}
+
+static int pmadv_ksm(int pidfd, int behaviour, unsigned int flags)
+{
+	return syscall(__NR_pmadv_ksm, pidfd, behaviour, flags);
+}
+
 static int ksm_advise(pid_t pid, bool _merge)
 {
-	int ret = 0;
-	char path[PATH_MAX];
-	int fd;
+	int ret;
+	int pidfd;
 
-	ret = snprintf(path, sizeof(path), KSM_ADVISE, pid);
-	if (ret < 0)
-	{
-		ret = EINVAL;
-		goto out;
-	}
-
-	fd = open(path, O_WRONLY);
-	if (fd == -1)
+	pidfd = pidfd_open(pid, 0);
+	if (pidfd == -1)
 	{
 		ret = errno;
 		goto out;
 	}
 
-	ret = write(fd, _merge ? "merge" : "unmerge", _merge ? 5 : 7);
+	ret = pmadv_ksm(pidfd, _merge ? MADV_MERGEABLE : MADV_UNMERGEABLE, 0);
 	if (ret == -1)
 	{
 		ret = errno;
-		goto close_fd;
+		goto close_pidfd;
 	}
 
-close_fd:
-	close(fd);
+close_pidfd:
+	ret = close(pidfd);
+	if (ret == -1)
+	{
+		ret = errno;
+		goto out;
+	}
 
 out:
 	return ret;
@@ -112,6 +128,43 @@ static int kthread_niceness(const char* _name)
 	}
 	closeproc(proc);
 
+	return ret;
+}
+
+static int setup_nr_pmadv_ksm(void)
+{
+	int ret = 0;
+	char buf[4] = { 0, };
+	ssize_t read_len;
+	long nr;
+
+	int fd = open(__SYSFS_pmadv_ksm, O_RDONLY);
+	if (fd == -1)
+	{
+		ret = errno;
+		goto out;
+	}
+
+	read_len = read(fd, buf, sizeof buf);
+	if (read_len == -1)
+	{
+		ret = errno;
+		goto close_fd;
+	}
+
+	nr = strtol(buf, NULL, 10);
+	if (nr == LONG_MIN || nr == LONG_MAX)
+	{
+		ret = errno;
+		goto close_fd;
+	}
+
+	__NR_pmadv_ksm = nr;
+
+close_fd:
+	close(fd);
+
+out:
 	return ret;
 }
 
@@ -148,6 +201,20 @@ int main(int _argc, char** _argv)
 	{
 		ret = EACCES;
 		fprintf(stderr, "capabilities: CAP_DAC_OVERRIDE required\n");
+		goto out;
+	}
+
+	if (!capng_have_capability(CAPNG_EFFECTIVE, CAP_SYS_NICE))
+	{
+		ret = EACCES;
+		fprintf(stderr, "capabilities: CAP_SYS_NICE required\n");
+		goto out;
+	}
+
+	if (setup_nr_pmadv_ksm())
+	{
+		ret = ENODATA;
+		fprintf(stderr, "Unable to get pmadv_ksm syscall number\n");
 		goto out;
 	}
 
