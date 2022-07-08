@@ -13,24 +13,27 @@ project_dependencies = [
   dependency('libcap-ng'),
 ]
 
-systemd = dependency('systemd')
-systemd_system_unit_dir = systemd.get_pkgconfig_variable('systemdsystemunitdir')
+systemd = dependency('systemd', required: false)
 
-unit_files = [
-  'uksmd.service'
-]
+if systemd.found()
+  systemd_system_unit_dir = systemd.get_pkgconfig_variable('systemdsystemunitdir')
+  unit_files = [
+    'uksmd.service'
+  ]
 
-foreach u : unit_files
-  configure_file(
-    copy: true,
-    input: u,
-    install: true,
-    install_dir: systemd_system_unit_dir,
-    output: u,
+
+  foreach u: unit_files
+    configure_file(
+      copy: true,
+      input: u,
+      install: true,
+      install_dir: systemd_system_unit_dir,
+      output: u,
     )
-endforeach
+  endforeach
 
-project_dependencies += systemd
+  project_dependencies += systemd
+endif
 
 build_args = [
   '-DPROJECT_NAME=' + meson.project_name(),
