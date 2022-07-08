@@ -11,7 +11,7 @@ Principles
 
 The daemon goes through the list of userspace tasks (once per 5 seconds) and hints them to apply `MADV_MERGEABLE` to anonymous mappings for `ksmd` kthread to merge memory pages with the same content. Only long-living tasks are hinted (those that were launched more than 10 seconds ago).
 
-This requires `pmadv_ksm()` syscall, which is available in [pf-kernel](https://gitlab.com/post-factum/pf-kernel/).
+This requires `pmadv_ksm()` syscall, which is available in [pf-kernel](https://codeberg.org/pf-kernel/linux).
 
 Building
 --------
