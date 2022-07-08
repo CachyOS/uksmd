@@ -32,9 +32,6 @@ project_dependencies = [
 ]
 
 build_args = [
-]
-
-build_args += [
   '-DPROJECT_NAME=' + meson.project_name(),
   '-DPROJECT_VERSION=' + meson.project_version(),
 ]
