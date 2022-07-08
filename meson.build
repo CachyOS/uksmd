@@ -8,6 +8,11 @@ project_source_files = [
   'uksmd.c'
 ]
 
+project_dependencies = [
+  dependency('libprocps'),
+  dependency('libcap-ng'),
+]
+
 systemd = dependency('systemd')
 systemd_system_unit_dir = systemd.get_pkgconfig_variable('systemdsystemunitdir')
 
@@ -25,11 +30,7 @@ foreach u : unit_files
     )
 endforeach
 
-project_dependencies = [
-  dependency('libprocps'),
-  dependency('libcap-ng'),
-  systemd
-]
+project_dependencies += systemd
 
 build_args = [
   '-DPROJECT_NAME=' + meson.project_name(),
