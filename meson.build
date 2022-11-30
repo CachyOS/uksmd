@@ -47,3 +47,5 @@ project_target = executable(
   install : true,
   c_args : build_args,
 )
+
+install_data(sources : 'uksmdstats', install_dir : '/usr/bin')
