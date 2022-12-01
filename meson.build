@@ -48,4 +48,5 @@ project_target = executable(
   c_args : build_args,
 )
 
-install_data(sources : 'uksmdstats', install_dir : '/usr/bin')
+install_data(sources : 'uksmdstats', install_dir : '/usr/bin',
+             sources : 'COPYING', rename : 'LICENSE', install_dir : '/usr/share/licenses/uksmd')
