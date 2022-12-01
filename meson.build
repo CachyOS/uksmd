@@ -16,7 +16,7 @@ project_dependencies = [
 systemd = dependency('systemd', required: false)
 
 if systemd.found()
-  systemd_system_unit_dir = systemd.get_pkgconfig_variable('systemdsystemunitdir')
+  systemd_system_unit_dir = systemd.get_variable(pkgconfig : 'systemdsystemunitdir')
   unit_files = [
     'uksmd.service'
   ]
