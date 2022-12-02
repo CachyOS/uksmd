@@ -2,6 +2,8 @@ project(
   'uksmd',
   'c',
   version: '0.0.0',
+  license : 'GPLv3',
+  meson_version : '>= 0.64.0'
 )
 
 project_source_files = [
