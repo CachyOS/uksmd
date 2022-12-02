@@ -16,21 +16,14 @@ project_dependencies = [
 systemd = dependency('systemd', required: false)
 
 if systemd.found()
-  systemd_system_unit_dir = systemd.get_pkgconfig_variable('systemdsystemunitdir')
-  unit_files = [
-    'uksmd.service'
-  ]
+  systemd_system_unit_dir = systemd.get_variable(pkgconfig : 'systemdsystemunitdir')
 
-
-  foreach u: unit_files
-    configure_file(
-      copy: true,
-      input: u,
-      install: true,
-      install_dir: systemd_system_unit_dir,
-      output: u,
-    )
-  endforeach
+  install_data(
+    [
+      'uksmd.service',
+    ],
+    install_dir: systemd_system_unit_dir
+  )
 
   project_dependencies += systemd
 endif
