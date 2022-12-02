@@ -27,23 +27,23 @@ if systemd.found()
     install_dir: systemd_system_unit_dir
   )
 
-  install_data(
-    [
-      'uksmdstats',
-    ],
-    install_dir: '/usr/bin'
-  )
-
-  install_data(
-    [
-      'COPYING',
-    ],
-    rename : 'LICENSE',
-    install_dir: '/usr/share/licenses/uksmd'
-  )
-
   project_dependencies += systemd
 endif
+
+install_data(
+  [
+    'uksmdstats',
+  ],
+  install_dir: '/usr/bin'
+)
+
+install_data(
+  [
+    'COPYING',
+  ],
+  rename : 'LICENSE',
+  install_dir: '/usr/share/licenses/uksmd'
+)
 
 build_args = [
   '-DPROJECT_NAME=' + meson.project_name(),
