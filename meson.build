@@ -25,6 +25,21 @@ if systemd.found()
     install_dir: systemd_system_unit_dir
   )
 
+  install_data(
+    [
+      'uksmdstats',
+    ],
+    install_dir: '/usr/bin'
+  )
+
+  install_data(
+    [
+      'COPYING',
+    ],
+    rename : 'LICENSE',
+    install_dir: '/usr/share/licenses/uksmd'
+  )
+
   project_dependencies += systemd
 endif
 
@@ -40,6 +55,3 @@ project_target = executable(
   install : true,
   c_args : build_args,
 )
-
-install_data(sources : 'uksmdstats', install_dir : '/usr/bin')
-install_data(sources : 'COPYING', rename : 'LICENSE', install_dir : '/usr/share/licenses/uksmd')
