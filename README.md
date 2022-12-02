@@ -31,3 +31,13 @@ Distributed under terms and conditions of GNU GPL v3 (only).
 Developers:
 
 * Oleksandr Natalenko &lt;oleksandr@natalenko.name&gt;
+
+CachyOS branding
+----------------
+
+The special version for CachyOS also includes `uksmdstats` .
+
+Contributors:
+
+* Piotr Gorski &lt;piotrgorski@cachyos.org&gt;
+* Damian N. &lt;nycko123@gmail&gt;
