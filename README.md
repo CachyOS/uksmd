@@ -40,4 +40,4 @@ The special version for CachyOS also includes `uksmdstats` .
 Contributors:
 
 * Piotr Gorski &lt;piotrgorski@cachyos.org&gt;
-* Damian N. &lt;nycko123@gmail&gt;
+* Damian N. &lt;nycko123@gmail.com&gt;
