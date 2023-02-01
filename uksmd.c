@@ -33,8 +33,8 @@
 
 #define KSM_RUN		"/sys/kernel/mm/ksm/run"
 #define KSMD_CMD		"ksmd"
-#define OBSERVE_WINDOW_SECS	10
-#define IDLE_SLEEP_SECS	5
+#define OBSERVE_WINDOW_SECS	30
+#define IDLE_SLEEP_SECS	60
 
 #define __SYSFS_pmadv_ksm	"/sys/kernel/pmadv/ksm"
 
