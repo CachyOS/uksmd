@@ -26,8 +26,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/pidfd.h>
 #include <sys/resource.h>
-#include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -62,11 +62,6 @@ close_fd:
 
 out:
 	return ret;
-}
-
-static int pidfd_open(pid_t pid, unsigned int flags)
-{
-	return syscall(__NR_pidfd_open, pid, flags);
 }
 
 static int pmadv_ksm(int pidfd, int behaviour, unsigned int flags)
