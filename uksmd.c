@@ -51,7 +51,7 @@ static int ksm_ctl(bool _enable)
 		goto out;
 	}
 
-	if (write(fd, _enable ? "1" : "0", 1) == -1)
+	if (write(fd, _enable ? "1" : "2", 1) == -1)
 	{
 		ret = errno;
 		goto close_fd;
