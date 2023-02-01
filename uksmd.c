@@ -27,6 +27,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -34,10 +35,6 @@
 #define KSMD_CMD		"ksmd"
 #define OBSERVE_WINDOW_SECS	10
 #define IDLE_SLEEP_SECS	5
-
-#ifndef __NR_pidfd_open
-#define __NR_pidfd_open 434	/* System call # on most architectures */
-#endif
 
 #define __SYSFS_pmadv_ksm	"/sys/kernel/pmadv/ksm"
 
