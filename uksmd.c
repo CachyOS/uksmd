@@ -32,9 +32,10 @@
 #include <unistd.h>
 
 #define KSM_RUN		"/sys/kernel/mm/ksm/run"
+#define KSM_FULL_SCANS		"/sys/kernel/mm/ksm/full_scans"
 #define KSMD_CMD		"ksmd"
 #define OBSERVE_WINDOW_SECS	30
-#define IDLE_SLEEP_SECS	60
+#define IDLE_SLEEP_SECS	15
 
 #define __SYSFS_pmadv_ksm	"/sys/kernel/pmadv/ksm"
 
@@ -160,6 +161,43 @@ out:
 	return ret;
 }
 
+static int get_ksm_full_scans(unsigned long *_full_scans)
+{
+	int ret = 0;
+	char buf[21] = { 0, };
+	ssize_t read_len;
+	unsigned long full_scans;
+
+	int fd = open(KSM_FULL_SCANS, O_RDONLY);
+	if (fd == -1)
+	{
+		ret = errno;
+		goto out;
+	}
+
+	read_len = read(fd, buf, sizeof buf);
+	if (read_len == -1)
+	{
+		ret = errno;
+		goto close_fd;
+	}
+
+	full_scans = strtoul(buf, NULL, 10);
+	if (full_scans == ULONG_MAX)
+	{
+		ret = errno;
+		goto close_fd;
+	}
+
+	*_full_scans = full_scans;
+
+close_fd:
+	close(fd);
+
+out:
+	return ret;
+}
+
 int main(int _argc, char** _argv)
 {
 	(void)_argc;
@@ -174,6 +212,9 @@ int main(int _argc, char** _argv)
 	struct timespec now;
 	struct timespec time_to_sleep;
 	siginfo_t siginfo;
+	unsigned long full_scans;
+	unsigned long prev_full_scans;
+	bool first_run;
 
 	if (capng_get_caps_process() == -1)
 	{
@@ -255,31 +296,48 @@ int main(int _argc, char** _argv)
 		goto ksm_ctl_false;
 	}
 
+	first_run = true;
+	full_scans = prev_full_scans = 0;
 	while (true)
 	{
-		clock_gettime(CLOCK_BOOTTIME, &now);
-
-		memset(&proc_info, 0, sizeof(proc_info));
-
-		PROCTAB* proc = openproc(PROC_FILLSTATUS | PROC_FILLSTAT);
-		while (readproc(proc, &proc_info) != NULL)
+		ret = get_ksm_full_scans(&full_scans);
+		if (ret)
 		{
-			/* skip kthreads */
-			if (!proc_info.vm_size)
-				continue;
-
-			/* skip ourselves */
-			if (proc_info.tid == self)
-				continue;
-
-			/* skip short-living tasks */
-			if (now.tv_sec - proc_info.start_time / ctps < OBSERVE_WINDOW_SECS)
-				continue;
-
-			if (ksm_advise(proc_info.tid, true))
-				continue;
+			fprintf(stderr, "get_ksm_full_scans: %s\n", strerror(ret));
+			goto unblock_signals;
 		}
-		closeproc(proc);
+
+		if (first_run || full_scans != prev_full_scans)
+		{
+			clock_gettime(CLOCK_BOOTTIME, &now);
+
+			memset(&proc_info, 0, sizeof(proc_info));
+
+			PROCTAB* proc = openproc(PROC_FILLSTATUS | PROC_FILLSTAT);
+			while (readproc(proc, &proc_info) != NULL)
+			{
+				/* skip kthreads */
+				if (!proc_info.vm_size)
+					continue;
+
+				/* skip ourselves */
+				if (proc_info.tid == self)
+					continue;
+
+				/* skip short-living tasks */
+				if (now.tv_sec - proc_info.start_time / ctps < OBSERVE_WINDOW_SECS)
+					continue;
+
+				if (ksm_advise(proc_info.tid, true))
+					continue;
+			}
+			closeproc(proc);
+
+			if (first_run)
+				first_run = false;
+
+			prev_full_scans = full_scans;
+		}
 
 		time_to_sleep.tv_sec = IDLE_SLEEP_SECS;
 		time_to_sleep.tv_nsec = 0;
