@@ -361,9 +361,8 @@ int main(int _argc, char** _argv)
 						continue;
 					} else
 					{
-						ret = errno;
-						fprintf(stderr, "sigtimedwait: an unblocked signal %d has been caught\n", siginfo.si_signo);
-						goto unblock_signals;
+						fprintf(stderr, "sigtimedwait: EINTR came with si_signo = %d\n", siginfo.si_signo);
+						continue;
 					}
 					break;
 				case EAGAIN:
