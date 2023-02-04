@@ -33,6 +33,7 @@
 
 #define KSM_RUN		"/sys/kernel/mm/ksm/run"
 #define KSM_FULL_SCANS		"/sys/kernel/mm/ksm/full_scans"
+#define KSM_PAGES_VOLATILE		"/sys/kernel/mm/ksm/pages_volatile"
 #define KSMD_CMD		"ksmd"
 #define OBSERVE_WINDOW_SECS	30
 #define IDLE_SLEEP_SECS	15
@@ -198,6 +199,43 @@ out:
 	return ret;
 }
 
+static int get_ksm_pages_volatile(unsigned long *_pages_volatile)
+{
+	int ret = 0;
+	char buf[21] = { 0, };
+	ssize_t read_len;
+	unsigned long pages_volatile;
+
+	int fd = open(KSM_PAGES_VOLATILE, O_RDONLY);
+	if (fd == -1)
+	{
+		ret = errno;
+		goto out;
+	}
+
+	read_len = read(fd, buf, sizeof buf);
+	if (read_len == -1)
+	{
+		ret = errno;
+		goto close_fd;
+	}
+
+	pages_volatile = strtoul(buf, NULL, 10);
+	if (pages_volatile == ULONG_MAX)
+	{
+		ret = errno;
+		goto close_fd;
+	}
+
+	*_pages_volatile = pages_volatile;
+
+close_fd:
+	close(fd);
+
+out:
+	return ret;
+}
+
 int main(int _argc, char** _argv)
 {
 	(void)_argc;
@@ -215,6 +253,7 @@ int main(int _argc, char** _argv)
 	unsigned long full_scans;
 	unsigned long prev_full_scans;
 	bool first_run;
+	unsigned long pages_volatile;
 
 	if (capng_get_caps_process() == -1)
 	{
@@ -307,7 +346,14 @@ int main(int _argc, char** _argv)
 			goto unblock_signals;
 		}
 
-		if (first_run || full_scans != prev_full_scans)
+		ret = get_ksm_pages_volatile(&pages_volatile);
+		if (ret)
+		{
+			fprintf(stderr, "get_ksm_pages_volatile: %s\n", strerror(ret));
+			goto unblock_signals;
+		}
+
+		if (first_run || full_scans != prev_full_scans || !pages_volatile)
 		{
 			clock_gettime(CLOCK_BOOTTIME, &now);
 
