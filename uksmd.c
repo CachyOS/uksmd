@@ -162,14 +162,14 @@ out:
 	return ret;
 }
 
-static int get_ksm_full_scans(unsigned long *_full_scans)
+static int get_ksm_gauge(const char *_name, unsigned long *_value)
 {
 	int ret = 0;
 	char buf[21] = { 0, };
 	ssize_t read_len;
-	unsigned long full_scans;
+	unsigned long value;
 
-	int fd = open(KSM_FULL_SCANS, O_RDONLY);
+	int fd = open(_name, O_RDONLY);
 	if (fd == -1)
 	{
 		ret = errno;
@@ -183,51 +183,14 @@ static int get_ksm_full_scans(unsigned long *_full_scans)
 		goto close_fd;
 	}
 
-	full_scans = strtoul(buf, NULL, 10);
-	if (full_scans == ULONG_MAX)
+	value = strtoul(buf, NULL, 10);
+	if (value == ULONG_MAX)
 	{
 		ret = errno;
 		goto close_fd;
 	}
 
-	*_full_scans = full_scans;
-
-close_fd:
-	close(fd);
-
-out:
-	return ret;
-}
-
-static int get_ksm_pages_volatile(unsigned long *_pages_volatile)
-{
-	int ret = 0;
-	char buf[21] = { 0, };
-	ssize_t read_len;
-	unsigned long pages_volatile;
-
-	int fd = open(KSM_PAGES_VOLATILE, O_RDONLY);
-	if (fd == -1)
-	{
-		ret = errno;
-		goto out;
-	}
-
-	read_len = read(fd, buf, sizeof buf);
-	if (read_len == -1)
-	{
-		ret = errno;
-		goto close_fd;
-	}
-
-	pages_volatile = strtoul(buf, NULL, 10);
-	if (pages_volatile == ULONG_MAX)
-	{
-		ret = errno;
-		goto close_fd;
-	}
-
-	*_pages_volatile = pages_volatile;
+	*_value = value;
 
 close_fd:
 	close(fd);
@@ -339,17 +302,17 @@ int main(int _argc, char** _argv)
 	full_scans = prev_full_scans = 0;
 	while (true)
 	{
-		ret = get_ksm_full_scans(&full_scans);
+		ret = get_ksm_gauge(KSM_FULL_SCANS, &full_scans);
 		if (ret)
 		{
-			fprintf(stderr, "get_ksm_full_scans: %s\n", strerror(ret));
+			fprintf(stderr, "get KSM_FULL_SCANS: %s\n", strerror(ret));
 			goto unblock_signals;
 		}
 
-		ret = get_ksm_pages_volatile(&pages_volatile);
+		ret = get_ksm_gauge(KSM_PAGES_VOLATILE, &pages_volatile);
 		if (ret)
 		{
-			fprintf(stderr, "get_ksm_pages_volatile: %s\n", strerror(ret));
+			fprintf(stderr, "get KSM_PAGES_VOLATILE: %s\n", strerror(ret));
 			goto unblock_signals;
 		}
 
