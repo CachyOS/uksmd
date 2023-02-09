@@ -3,7 +3,7 @@ project(
   'c',
   version: '1.0.0',
   license : 'GPLv3',
-  meson_version : '>= 0.63.3'
+  meson_version : '>= 0.64.0'
 )
 
 project_source_files = [
