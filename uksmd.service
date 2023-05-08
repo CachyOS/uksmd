@@ -1,7 +1,9 @@
 [Unit]
 Description=Userspace KSM helper daemon
 Documentation=https://codeberg.org/pf-kernel/uksmd
-ConditionPathExists=/sys/kernel/pmadv/ksm
+ConditionPathExists=/sys/kernel/process_ksm/process_ksm_enable
+ConditionPathExists=/sys/kernel/process_ksm/process_ksm_disable
+ConditionPathExists=/sys/kernel/process_ksm/process_ksm_status
 
 [Service]
 Type=forking
