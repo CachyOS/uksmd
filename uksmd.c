@@ -31,16 +31,27 @@
 #include <time.h>
 #include <unistd.h>
 
-#define KSM_RUN		"/sys/kernel/mm/ksm/run"
+#define KSM_RUN				"/sys/kernel/mm/ksm/run"
 #define KSM_FULL_SCANS		"/sys/kernel/mm/ksm/full_scans"
-#define KSM_PAGES_VOLATILE		"/sys/kernel/mm/ksm/pages_volatile"
-#define KSMD_CMD		"ksmd"
+#define KSM_PAGES_VOLATILE	"/sys/kernel/mm/ksm/pages_volatile"
+#define KSMD_CMD			"ksmd"
 #define OBSERVE_WINDOW_SECS	30
-#define IDLE_SLEEP_SECS	15
+#define IDLE_SLEEP_SECS		15
 
-#define __SYSFS_pmadv_ksm	"/sys/kernel/pmadv/ksm"
+#define __SYSFS_process_ksm_enable	"/sys/kernel/process_ksm/process_ksm_enable"
+#define __SYSFS_process_ksm_disable	"/sys/kernel/process_ksm/process_ksm_disable"
+#define __SYSFS_process_ksm_status	"/sys/kernel/process_ksm/process_ksm_status"
 
-static int __NR_pmadv_ksm = -1;
+enum pksm_action
+{
+	PKSM_ENABLE = 0,
+	PKSM_DISABLE,
+	PKSM_STATUS,
+};
+
+static long __NR_process_ksm_enable = -1;
+static long __NR_process_ksm_disable = -1;
+static long __NR_process_ksm_status = -1;
 
 static int ksm_ctl(bool _enable)
 {
@@ -66,14 +77,24 @@ out:
 	return ret;
 }
 
-static int pmadv_ksm(int pidfd, int behaviour, unsigned int flags)
+static long process_ksm_enable(int pidfd, unsigned int flags)
 {
-	return syscall(__NR_pmadv_ksm, pidfd, behaviour, flags);
+	return syscall(__NR_process_ksm_enable, pidfd, flags);
 }
 
-static int ksm_advise(pid_t pid, bool _merge)
+static long process_ksm_disable(int pidfd, unsigned int flags)
 {
-	int ret;
+	return syscall(__NR_process_ksm_disable, pidfd, flags);
+}
+
+static long process_ksm_status(int pidfd, unsigned int flags)
+{
+	return syscall(__NR_process_ksm_status, pidfd, flags);
+}
+
+static long process_ksm(pid_t pid, enum pksm_action _action)
+{
+	long ret;
 	int pidfd;
 
 	pidfd = pidfd_open(pid, 0);
@@ -83,7 +104,19 @@ static int ksm_advise(pid_t pid, bool _merge)
 		goto out;
 	}
 
-	ret = pmadv_ksm(pidfd, _merge ? MADV_MERGEABLE : MADV_UNMERGEABLE, 0);
+	switch (_action)
+	{
+		case PKSM_ENABLE:
+			ret = process_ksm_enable(pidfd, 0);
+			break;
+		case PKSM_DISABLE:
+			ret = process_ksm_disable(pidfd, 0);
+			break;
+		case PKSM_STATUS:
+			ret = process_ksm_status(pidfd, 0);
+			break;
+	}
+
 	if (ret == -1)
 	{
 		ret = errno;
@@ -125,14 +158,14 @@ static int kthread_niceness(const char* _name)
 	return ret;
 }
 
-static int setup_nr_pmadv_ksm(void)
+static int do_setup_process_ksm(const char* _path, long* _nr)
 {
 	int ret = 0;
 	char buf[4] = { 0, };
 	ssize_t read_len;
 	long nr;
 
-	int fd = open(__SYSFS_pmadv_ksm, O_RDONLY);
+	int fd = open(_path, O_RDONLY);
 	if (fd == -1)
 	{
 		ret = errno;
@@ -153,10 +186,28 @@ static int setup_nr_pmadv_ksm(void)
 		goto close_fd;
 	}
 
-	__NR_pmadv_ksm = nr;
+	*_nr = nr;
 
 close_fd:
 	close(fd);
+
+out:
+	return ret;
+}
+
+static int setup_nr_process_ksm(void)
+{
+	int ret = 0;
+
+	ret = do_setup_process_ksm(__SYSFS_process_ksm_enable, &__NR_process_ksm_enable);
+	if (ret)
+		goto out;
+
+	ret = do_setup_process_ksm(__SYSFS_process_ksm_disable, &__NR_process_ksm_disable);
+	if (ret)
+		goto out;
+
+	ret = do_setup_process_ksm(__SYSFS_process_ksm_status, &__NR_process_ksm_status);
 
 out:
 	return ret;
@@ -246,10 +297,10 @@ int main(int _argc, char** _argv)
 		goto out;
 	}
 
-	if (setup_nr_pmadv_ksm())
+	if (setup_nr_process_ksm())
 	{
 		ret = ENODATA;
-		fprintf(stderr, "Unable to get pmadv_ksm syscall number\n");
+		fprintf(stderr, "Unable to get process_ksm syscall numbers\n");
 		goto out;
 	}
 
@@ -337,7 +388,11 @@ int main(int _argc, char** _argv)
 				if (now.tv_sec - proc_info.start_time / ctps < OBSERVE_WINDOW_SECS)
 					continue;
 
-				if (ksm_advise(proc_info.tid, true))
+				/* skip already processed tasks */
+				if (process_ksm(proc_info.tid, PKSM_STATUS))
+					continue;
+
+				if (process_ksm(proc_info.tid, PKSM_ENABLE))
 					continue;
 			}
 			closeproc(proc);
