@@ -1,5 +1,5 @@
 #!/bin/sh
-if [ -f /sys/kernel/process_ksm/process_ksm_enable ] && [ -f /sys/kernel/process_ksm/process_ksm_disable ] && [ -f /sys/kernel/process_ksm/process_ksm_status ] ; then
+if [ -f /sys/kernel/process_ksm/process_ksm_enable ] && [ -f /sys/kernel/process_ksm/process_ksm_disable ] && [ -f /sys/kernel/process_ksm/process_ksm_status ]; then
 echo -e "======================================================"
 echo -e "uksmd with uksmdstats support. Powered by CachyOS Team"
 echo -e "======================================================"
