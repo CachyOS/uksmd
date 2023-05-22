@@ -15,6 +15,11 @@ project_dependencies = [
   dependency('libcap-ng'),
 ]
 
+build_args = [
+  '-DPROJECT_NAME=' + meson.project_name(),
+  '-DPROJECT_VERSION=' + meson.project_version(),
+]
+
 systemd = dependency('systemd', required: false)
 
 if systemd.found()
@@ -27,13 +32,14 @@ if systemd.found()
     install_dir: systemd_system_unit_dir
   )
 
-  project_dependencies += systemd
-endif
+  project_dependencies += [
+    dependency('libsystemd')
+  ]
 
-build_args = [
-  '-DPROJECT_NAME=' + meson.project_name(),
-  '-DPROJECT_VERSION=' + meson.project_version(),
-]
+  build_args += [
+    '-DHAVE_SYSTEMD',
+  ]
+endif
 
 install_data(
   [

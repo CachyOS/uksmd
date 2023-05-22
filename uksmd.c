@@ -28,12 +28,18 @@
 #include <sys/mman.h>
 #include <sys/pidfd.h>
 #include <sys/resource.h>
+#if defined HAVE_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif /* HAVE_SYSTEMD */
 #include <time.h>
 #include <unistd.h>
 
 #define KSM_RUN				"/sys/kernel/mm/ksm/run"
 #define KSM_FULL_SCANS		"/sys/kernel/mm/ksm/full_scans"
 #define KSM_PAGES_VOLATILE	"/sys/kernel/mm/ksm/pages_volatile"
+#if defined HAVE_SYSTEMD
+#define KSM_PROFIT			"/sys/kernel/mm/ksm/general_profit"
+#endif /* HAVE_SYSTEMD */
 #define KSMD_CMD			"ksmd"
 #define OBSERVE_WINDOW_SECS	30
 #define IDLE_SLEEP_SECS		15
@@ -213,7 +219,7 @@ out:
 	return ret;
 }
 
-static int get_ksm_gauge(const char *_name, unsigned long *_value)
+static int get_ksm_gauge(const char *_name, long *_value)
 {
 	int ret = 0;
 	char buf[21] = { 0, };
@@ -234,8 +240,8 @@ static int get_ksm_gauge(const char *_name, unsigned long *_value)
 		goto close_fd;
 	}
 
-	value = strtoul(buf, NULL, 10);
-	if (value == ULONG_MAX)
+	value = strtol(buf, NULL, 10);
+	if (value == LONG_MIN || value == LONG_MAX)
 	{
 		ret = errno;
 		goto close_fd;
@@ -264,10 +270,13 @@ int main(int _argc, char** _argv)
 	struct timespec now;
 	struct timespec time_to_sleep;
 	siginfo_t siginfo;
-	unsigned long full_scans;
-	unsigned long prev_full_scans;
+	long full_scans;
+	long prev_full_scans;
 	bool first_run;
-	unsigned long pages_volatile;
+	long pages_volatile;
+#if defined HAVE_SYSTEMD
+	long profit;
+#endif /* HAVE_SYSTEMD */
 
 	if (capng_get_caps_process() == -1)
 	{
@@ -320,6 +329,7 @@ int main(int _argc, char** _argv)
 		goto out;
 	}
 
+#if !defined HAVE_SYSTEMD
 	ret = daemon(0, 0);
 	if (ret == -1)
 	{
@@ -327,6 +337,7 @@ int main(int _argc, char** _argv)
 		fprintf(stderr, "daemon: %s\n", strerror(ret));
 		goto out;
 	}
+#endif /* HAVE_SYSTEMD */
 
 	self = getpid();
 	ctps = sysconf(_SC_CLK_TCK);
@@ -349,10 +360,25 @@ int main(int _argc, char** _argv)
 		goto ksm_ctl_false;
 	}
 
+#if defined HAVE_SYSTEMD
+	sd_notify(0, "READY=1");
+#endif /* HAVE_SYSTEMD */
+
 	first_run = true;
 	full_scans = prev_full_scans = 0;
 	while (true)
 	{
+#if defined HAVE_SYSTEMD
+		sd_notify(0, "WATCHDOG=1");
+		ret = get_ksm_gauge(KSM_PROFIT, &profit);
+		if (ret)
+		{
+			fprintf(stderr, "get KSM_PROFIT: %s\n", strerror(ret));
+			goto unblock_signals;
+		}
+		sd_notifyf(0, "STATUS=Profit: %ld MiB", profit / (1L << 20));
+#endif /* HAVE_SYSTEMD */
+
 		ret = get_ksm_gauge(KSM_FULL_SCANS, &full_scans);
 		if (ret)
 		{
@@ -437,6 +463,10 @@ int main(int _argc, char** _argv)
 	}
 
 unblock_signals:
+#if defined HAVE_SYSTEMD
+	sd_notify(0, "STOPPING=1");
+#endif /* HAVE_SYSTEMD */
+
 	ret = sigprocmask(SIG_SETMASK, &sigorigmask, NULL);
 	if (ret == -1)
 	{
@@ -454,6 +484,10 @@ ksm_ctl_false:
 	}
 
 out:
+#if defined HAVE_SYSTEMD
+	sd_notifyf(0, "ERRNO=%d", ret);
+#endif /* HAVE_SYSTEMD */
+
 	exit(ret);
 }
 
