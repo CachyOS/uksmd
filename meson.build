@@ -30,6 +30,11 @@ if systemd.found()
   project_dependencies += systemd
 endif
 
+build_args = [
+  '-DPROJECT_NAME=' + meson.project_name(),
+  '-DPROJECT_VERSION=' + meson.project_version(),
+]
+
 install_data(
   [
     'uksmdstats',
@@ -44,11 +49,6 @@ install_data(
   rename : 'LICENSE',
   install_dir: '/usr/share/licenses/uksmd'
 )
-
-build_args = [
-  '-DPROJECT_NAME=' + meson.project_name(),
-  '-DPROJECT_VERSION=' + meson.project_version(),
-]
 
 project_target = executable(
   meson.project_name(),
