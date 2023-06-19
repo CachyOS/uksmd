@@ -126,16 +126,14 @@ static long process_ksm(pid_t pid, enum pksm_action _action)
 	if (ret == -1)
 	{
 		ret = errno;
-		goto close_pidfd;
-	}
-
-close_pidfd:
-	ret = close(pidfd);
-	if (ret == -1)
-	{
-		ret = errno;
+		/* ignore close() ret value to preserve the one from process_kvm_*() */
+		close(pidfd);
 		goto out;
 	}
+
+	ret = close(pidfd);
+	if (ret == -1)
+		ret = errno;
 
 out:
 	return ret;
@@ -224,7 +222,7 @@ static int get_ksm_gauge(const char *_name, long *_value)
 	int ret = 0;
 	char buf[21] = { 0, };
 	ssize_t read_len;
-	unsigned long value;
+	unsigned long value = 0;
 
 	int fd = open(_name, O_RDONLY);
 	if (fd == -1)
@@ -242,17 +240,14 @@ static int get_ksm_gauge(const char *_name, long *_value)
 
 	value = strtol(buf, NULL, 10);
 	if (value == LONG_MIN || value == LONG_MAX)
-	{
 		ret = errno;
-		goto close_fd;
-	}
-
-	*_value = value;
 
 close_fd:
 	close(fd);
 
 out:
+	*_value = value;
+
 	return ret;
 }
 
