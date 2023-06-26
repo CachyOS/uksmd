@@ -141,9 +141,9 @@ out:
 	return ret;
 }
 
-static int kthread_niceness(const char* _name)
+static int kthread_niceness(const char* _name, int *_niceness)
 {
-	int ret = -1;
+	int ret;
 	struct pids_info *info = NULL;
 	struct pids_stack *stack;
 	enum pids_item items[] =
@@ -165,14 +165,16 @@ static int kthread_niceness(const char* _name)
 
 		if (!strcmp(_name, PIDS_VAL(0, str, stack, info)))
 		{
-			ret = PIDS_VAL(1, s_int, stack, info);
+			*_niceness = PIDS_VAL(1, s_int, stack, info);
 			break;
 		}
 	}
 
-	procps_pids_unref(&info);
+	ret = procps_pids_unref(&info);
+	if (ret < 0)
+		return ret;
 
-	return ret;
+	return 0;
 }
 
 static int do_setup_process_ksm(const char* _path, long* _nr)
@@ -327,11 +329,10 @@ int main(int _argc, char** _argv)
 		goto out;
 	}
 
-	ksmd_niceness = kthread_niceness("ksmd");
-	if (ksmd_niceness == -1)
+	ret = kthread_niceness("ksmd", &ksmd_niceness);
+	if (ret < 0)
 	{
-		ret = ESRCH;
-		fprintf(stderr, "Unable to get ksmd niceness\n");
+		fprintf(stderr, "kthread_niceness: %s\n", strerror(-ret));
 		goto out;
 	}
 
