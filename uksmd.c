@@ -128,7 +128,7 @@ static long process_ksm(pid_t pid, enum pksm_action _action)
 	if (ret == -1)
 	{
 		ret = errno;
-		/* ignore close() ret value to preserve the one from process_kvm_*() */
+		/* ignore close() ret value to preserve the one from process_ksm_*() */
 		close(pidfd);
 		goto out;
 	}
