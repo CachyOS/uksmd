@@ -154,6 +154,7 @@ static size_t pids_index(enum pids_item _items[], size_t _items_len, int _item)
 static int kthread_niceness(const char* _name, int *_niceness)
 {
 	int ret;
+	bool found = false;
 	struct pids_info *info = NULL;
 	struct pids_stack *stack;
 	enum pids_item items[] =
@@ -176,9 +177,13 @@ static int kthread_niceness(const char* _name, int *_niceness)
 		if (!strcmp(_name, PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_CMD), str, stack, info)))
 		{
 			*_niceness = PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_NICE), s_int, stack, info);
+			found = true;
 			break;
 		}
 	}
+
+	if (!found)
+		return -ESRCH;
 
 	ret = procps_pids_unref(&info);
 	if (ret < 0)
