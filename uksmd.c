@@ -141,7 +141,7 @@ out:
 	return ret;
 }
 
-static size_t pids_index(enum pids_item _items[], size_t _items_len, int _item)
+static size_t pids_index(const enum pids_item _items[], size_t _items_len, int _item)
 {
 	for (size_t i = 0; i < _items_len; i++)
 		if (_items[i] == _item)
