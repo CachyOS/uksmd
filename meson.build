@@ -11,7 +11,7 @@ project_source_files = [
 ]
 
 project_dependencies = [
-  dependency('libprocps'),
+  dependency('libproc2'),
   dependency('libcap-ng'),
 ]
 

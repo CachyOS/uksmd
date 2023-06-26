@@ -18,8 +18,8 @@
 #include <cap-ng.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <libproc2/pids.h>
 #include <limits.h>
-#include <proc/readproc.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -33,6 +33,8 @@
 #endif /* HAVE_SYSTEMD */
 #include <time.h>
 #include <unistd.h>
+
+#define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof((arr)[0]))
 
 #define KSM_RUN				"/sys/kernel/mm/ksm/run"
 #define KSM_FULL_SCANS		"/sys/kernel/mm/ksm/full_scans"
@@ -142,22 +144,33 @@ out:
 static int kthread_niceness(const char* _name)
 {
 	int ret = -1;
-	proc_t proc_info = { 0, };
+	struct pids_info *info = NULL;
+	struct pids_stack *stack;
+	enum pids_item items[] =
+	{
+		PIDS_CMD,
+		PIDS_NICE,
+		PIDS_VM_SIZE,
+	};
 
-	PROCTAB* proc = openproc(PROC_FILLSTAT);
-	while (readproc(proc, &proc_info) != NULL)
+	ret = procps_pids_new(&info, items, ARRAY_SIZE(items));
+	if (ret < 0)
+		return ret;
+
+	while ((stack = procps_pids_get(info, PIDS_FETCH_TASKS_ONLY)))
 	{
 		/* skip uthreads */
-		if (proc_info.vm_size)
+		if (PIDS_VAL(2, ul_int, stack, info))
 			continue;
 
-		if (!strcmp(_name, proc_info.cmd))
+		if (!strcmp(_name, PIDS_VAL(0, str, stack, info)))
 		{
-			ret = proc_info.nice;
+			ret = PIDS_VAL(1, s_int, stack, info);
 			break;
 		}
 	}
-	closeproc(proc);
+
+	procps_pids_unref(&info);
 
 	return ret;
 }
@@ -258,10 +271,16 @@ int main(int _argc, char** _argv)
 	int ret;
 	int ksmd_niceness;
 	pid_t self;
-	long ctps;
 	sigset_t sigmask;
 	sigset_t sigorigmask;
-	proc_t proc_info;
+	struct pids_info *info = NULL;
+	struct pids_stack *stack;
+	enum pids_item items[] =
+	{
+		PIDS_ID_PID,
+		PIDS_TIME_START,
+		PIDS_VM_SIZE,
+	};
 	struct timespec now;
 	struct timespec time_to_sleep;
 	siginfo_t siginfo;
@@ -335,7 +354,6 @@ int main(int _argc, char** _argv)
 #endif /* HAVE_SYSTEMD */
 
 	self = getpid();
-	ctps = sysconf(_SC_CLK_TCK);
 
 	ret = ksm_ctl(true);
 	if (ret)
@@ -392,31 +410,41 @@ int main(int _argc, char** _argv)
 		{
 			clock_gettime(CLOCK_BOOTTIME, &now);
 
-			memset(&proc_info, 0, sizeof(proc_info));
+			ret = procps_pids_new(&info, items, ARRAY_SIZE(items));
+			if (ret < 0)
+			{
+				fprintf(stderr, "procps_pids_new: %s\n", strerror(-ret));
+				goto unblock_signals;
+			}
 
-			PROCTAB* proc = openproc(PROC_FILLSTATUS | PROC_FILLSTAT);
-			while (readproc(proc, &proc_info) != NULL)
+			while ((stack = procps_pids_get(info, PIDS_FETCH_TASKS_ONLY)))
 			{
 				/* skip kthreads */
-				if (!proc_info.vm_size)
+				if (!PIDS_VAL(2, ul_int, stack, info))
 					continue;
 
 				/* skip ourselves */
-				if (proc_info.tid == self)
+				if (PIDS_VAL(0, s_int, stack, info) == self)
 					continue;
 
 				/* skip short-living tasks */
-				if (now.tv_sec - proc_info.start_time / ctps < OBSERVE_WINDOW_SECS)
+				if (now.tv_sec - PIDS_VAL(1, real, stack, info) < OBSERVE_WINDOW_SECS)
 					continue;
 
 				/* skip already processed tasks */
-				if (process_ksm(proc_info.tid, PKSM_STATUS))
+				if (process_ksm(PIDS_VAL(0, s_int, stack, info), PKSM_STATUS))
 					continue;
 
-				if (process_ksm(proc_info.tid, PKSM_ENABLE))
+				if (process_ksm(PIDS_VAL(0, s_int, stack, info), PKSM_ENABLE))
 					continue;
 			}
-			closeproc(proc);
+
+			ret = procps_pids_unref(&info);
+			if (ret < 0)
+			{
+				fprintf(stderr, "procps_pids_unref: %s\n", strerror(-ret));
+				goto unblock_signals;
+			}
 
 			if (first_run)
 				first_run = false;
