@@ -141,6 +141,16 @@ out:
 	return ret;
 }
 
+static size_t pids_index(enum pids_item _items[], size_t _items_len, int _item)
+{
+	for (size_t i = 0; i < _items_len; i++)
+		if (_items[i] == _item)
+			return i;
+
+	/* coding error: no given item was declared in array */
+	abort();
+}
+
 static int kthread_niceness(const char* _name, int *_niceness)
 {
 	int ret;
@@ -160,12 +170,12 @@ static int kthread_niceness(const char* _name, int *_niceness)
 	while ((stack = procps_pids_get(info, PIDS_FETCH_TASKS_ONLY)))
 	{
 		/* skip uthreads */
-		if (PIDS_VAL(2, ul_int, stack, info))
+		if (PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_VM_SIZE), ul_int, stack, info))
 			continue;
 
-		if (!strcmp(_name, PIDS_VAL(0, str, stack, info)))
+		if (!strcmp(_name, PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_CMD), str, stack, info)))
 		{
-			*_niceness = PIDS_VAL(1, s_int, stack, info);
+			*_niceness = PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_NICE), s_int, stack, info);
 			break;
 		}
 	}
@@ -421,22 +431,24 @@ int main(int _argc, char** _argv)
 			while ((stack = procps_pids_get(info, PIDS_FETCH_TASKS_ONLY)))
 			{
 				/* skip kthreads */
-				if (!PIDS_VAL(2, ul_int, stack, info))
+				if (!PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_VM_SIZE), ul_int, stack, info))
 					continue;
 
+				pid_t current_pid = PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_ID_PID), s_int, stack, info);
+
 				/* skip ourselves */
-				if (PIDS_VAL(0, s_int, stack, info) == self)
+				if (current_pid == self)
 					continue;
 
 				/* skip short-living tasks */
-				if (now.tv_sec - PIDS_VAL(1, real, stack, info) < OBSERVE_WINDOW_SECS)
+				if (now.tv_sec - PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_TIME_START), real, stack, info) < OBSERVE_WINDOW_SECS)
 					continue;
 
 				/* skip already processed tasks */
-				if (process_ksm(PIDS_VAL(0, s_int, stack, info), PKSM_STATUS))
+				if (process_ksm(current_pid, PKSM_STATUS))
 					continue;
 
-				if (process_ksm(PIDS_VAL(0, s_int, stack, info), PKSM_ENABLE))
+				if (process_ksm(current_pid, PKSM_ENABLE))
 					continue;
 			}
 
