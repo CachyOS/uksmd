@@ -151,6 +151,9 @@ static size_t pids_index(const enum pids_item _items[], size_t _items_len, int _
 	abort();
 }
 
+#define PKSM_PIDS_VAL(name, type) \
+	(PIDS_VAL(pids_index(items, ARRAY_SIZE(items), name), type, stack, info))
+
 static int kthread_niceness(const char* _name, int *_niceness)
 {
 	int ret;
@@ -171,12 +174,12 @@ static int kthread_niceness(const char* _name, int *_niceness)
 	while ((stack = procps_pids_get(info, PIDS_FETCH_TASKS_ONLY)))
 	{
 		/* skip uthreads */
-		if (PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_VM_SIZE), ul_int, stack, info))
+		if (PKSM_PIDS_VAL(PIDS_VM_SIZE, ul_int))
 			continue;
 
-		if (!strcmp(_name, PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_CMD), str, stack, info)))
+		if (!strcmp(_name, PKSM_PIDS_VAL(PIDS_CMD, str)))
 		{
-			*_niceness = PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_NICE), s_int, stack, info);
+			*_niceness = PKSM_PIDS_VAL(PIDS_NICE, s_int);
 			found = true;
 			break;
 		}
@@ -436,17 +439,17 @@ int main(int _argc, char** _argv)
 			while ((stack = procps_pids_get(info, PIDS_FETCH_TASKS_ONLY)))
 			{
 				/* skip kthreads */
-				if (!PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_VM_SIZE), ul_int, stack, info))
+				if (!PKSM_PIDS_VAL(PIDS_VM_SIZE, ul_int))
 					continue;
 
-				pid_t current_pid = PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_ID_PID), s_int, stack, info);
+				pid_t current_pid = PKSM_PIDS_VAL(PIDS_ID_PID, s_int);
 
 				/* skip ourselves */
 				if (current_pid == self)
 					continue;
 
 				/* skip short-living tasks */
-				if (now.tv_sec - PIDS_VAL(pids_index(items, ARRAY_SIZE(items), PIDS_TIME_START), real, stack, info) < OBSERVE_WINDOW_SECS)
+				if (now.tv_sec - PKSM_PIDS_VAL(PIDS_TIME_START, real) < OBSERVE_WINDOW_SECS)
 					continue;
 
 				/* skip already processed tasks */
