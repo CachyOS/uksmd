@@ -16,8 +16,8 @@ project_dependencies = [
 ]
 
 build_args = [
-  '-DPROJECT_NAME=' + meson.project_name(),
-  '-DPROJECT_VERSION=' + meson.project_version(),
+  '-DPROJECT_NAME="' + meson.project_name() + '"',
+  '-DPROJECT_VERSION="' + meson.project_version() + '"',
 ]
 
 systemd = dependency('systemd', required: false)
