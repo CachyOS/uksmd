@@ -12,8 +12,13 @@ if [ -f /sys/kernel/process_ksm/process_ksm_enable ] && [ -f /sys/kernel/process
 		echo "Pages over ratio: $(cat /sys/kernel/mm/ksm/stable_node_chains)"
 		echo "Duplicated pages: $(cat /sys/kernel/mm/ksm/stable_node_dups)"
 		echo "Use zero pages: $(cat /sys/kernel/mm/ksm/use_zero_pages)"
-		echo "Sharing/shared ratio: $(awk "BEGIN {x=$(cat /sys/kernel/mm/ksm/pages_sharing);y=$(cat /sys/kernel/mm/ksm/pages_shared);print x/y}")"
-		echo "Unshared/sharing ratio: $(awk "BEGIN {x=$(cat /sys/kernel/mm/ksm/pages_unshared);y=$(cat /sys/kernel/mm/ksm/pages_sharing);print x/y}")"
+		if [ "$(cat /sys/kernel/mm/ksm/pages_shared)" -gt 0  ] && [ "$(cat /sys/kernel/mm/ksm/pages_sharing)" -gt 0 ]; then
+			echo "Sharing/shared ratio: $(awk "BEGIN {x=$(cat /sys/kernel/mm/ksm/pages_sharing);y=$(cat /sys/kernel/mm/ksm/pages_shared);print x/y}")"
+			echo "Unshared/sharing ratio: $(awk "BEGIN {x=$(cat /sys/kernel/mm/ksm/pages_unshared);y=$(cat /sys/kernel/mm/ksm/pages_sharing);print x/y}")"
+		else
+			echo "Sharing/shared ratio: 0"
+			echo "Unshared/sharing ratio: 0"
+		fi
 		echo ":"
 		# formula MiB: $page_value * page size in Bytes / (1024 * 1024)
 		# = $page_value * 4096 / (1024 / 1024) = $page_value / 256 (MiB)
