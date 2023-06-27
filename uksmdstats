@@ -21,7 +21,7 @@ if [ -f /sys/kernel/process_ksm/process_ksm_enable ] && [ -f /sys/kernel/process
 		echo ":"
 		# https://www.kernel.org/doc/Documentation/admin-guide/mm/ksm.rst
 		# general_profit =~ pages_sharing * sizeof(page) - (all_rmap_items) * sizeof(rmap_item);
-		echo "General profit: $(awk '{ print($0 / 256 / 1024) }' /sys/kernel/mm/ksm/general_profit):GiB"
+		echo "General profit: $(awk '{ print($0 / 1024 / 1024) }' /sys/kernel/mm/ksm/general_profit):MiB"
 		break
 	done | column -t -s':'
 else
