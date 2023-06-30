@@ -61,6 +61,11 @@ static long __NR_process_ksm_enable = -1;
 static long __NR_process_ksm_disable = -1;
 static long __NR_process_ksm_status = -1;
 
+static const char* incompatible_tasks[] =
+{
+	"mariadbd",
+};
+
 static int ksm_ctl(bool _enable)
 {
 	int ret = 0;
@@ -284,6 +289,15 @@ out:
 	return ret;
 }
 
+static bool is_incompatible(const char* _comm)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(incompatible_tasks); i++)
+		if (!strcmp(incompatible_tasks[i], _comm))
+			return true;
+
+	return false;
+}
+
 int main(int _argc, char** _argv)
 {
 	(void)_argc;
@@ -297,6 +311,7 @@ int main(int _argc, char** _argv)
 	struct pids_stack *stack;
 	enum pids_item items[] =
 	{
+		PIDS_CMD,
 		PIDS_ID_PID,
 		PIDS_TIME_START,
 		PIDS_VM_SIZE,
@@ -455,6 +470,13 @@ int main(int _argc, char** _argv)
 				/* skip already processed tasks */
 				if (process_ksm(current_pid, PKSM_STATUS))
 					continue;
+
+				/* explicitly disable incompatible tasks */
+				if (is_incompatible(PKSM_PIDS_VAL(PIDS_CMD, str)))
+				{
+					process_ksm(current_pid, PKSM_DISABLE);
+					continue;
+				}
 
 				if (process_ksm(current_pid, PKSM_ENABLE))
 					continue;
