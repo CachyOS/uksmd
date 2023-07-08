@@ -1,0 +1,64 @@
+# ========================
+# Powered by CachyOS Team
+# ========================
+# uksmdstats - polish translation
+# This file is distributed under the GPL license.
+# CachyOS Team - Damian N. <nycko123 at gmail>, 08.07.2023
+# CachyOS - Peter Jung
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"POT-Creation-Date: 2023-07-08 17:00+0100\n"
+"PO-Revision-Date: 2023-07-08 17:00+0100\n"
+"Last-Translator: Damian N. <nycko123 at gmail>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+#
+#: myscript:10
+#, sh-format
+
+msgid "Full scans"
+msgstr "Komplette Scans"
+
+msgid "Interval"
+msgstr "Sendepause"
+
+msgid "Max page sharing ratio"
+msgstr "Max. Seitenteilungsrate"
+
+msgid "Pages to scan"
+msgstr "Seiten zum Scannen"
+
+msgid "Pages over ratio"
+msgstr "Seiten über rate"
+
+msgid "Duplicated pages"
+msgstr "Doppelte Seiten"
+
+msgid "Use zero pages"
+msgstr "Verwenden Sie Nullseiten"
+
+msgid "Sharing/shared ratio"
+msgstr "Teilen/geteilt rate"
+
+msgid "Unshared/sharing ratio"
+msgstr "Ungeteilt/teilen rate"
+
+msgid "Pages sharing"
+msgstr "Seiten teilen"
+
+msgid "Pages shared"
+msgstr "Seiten geteilt "
+
+msgid "Pages unshared"
+msgstr "Seiten ungeteilt"
+
+msgid "General profit"
+msgstr "Allgemeine Ausbeute"
+
+msgid "The kernel you are using does not support"
+msgstr "Das kernel Sie verwenden unterstützt nicht"
