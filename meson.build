@@ -1,7 +1,7 @@
 project(
   'uksmd',
   'c',
-  version: '1.2.4',
+  version: '1.2.5',
   license : 'GPLv3',
   meson_version : '>= 0.64.0'
 )
