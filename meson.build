@@ -56,6 +56,13 @@ install_data(
   install_dir: '/usr/share/licenses/uksmd'
 )
 
+install_data(
+  [
+    'locale/pl.mo',
+  ],
+  install_dir: '/usr/share/locale/pl/LC_MESSAGES/uksmdstats.mo'
+)
+
 project_target = executable(
   meson.project_name(),
   project_source_files,
