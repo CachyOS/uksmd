@@ -20,7 +20,9 @@ build_args = [
   '-DPROJECT_VERSION="' + meson.project_version() + '"',
 ]
 
+i18n = import('i18n')
 systemd = dependency('systemd', required: false)
+gettext_package = 'uksmdstats'
 
 if systemd.found()
   systemd_system_unit_dir = systemd.get_variable(pkgconfig : 'systemdsystemunitdir')
@@ -56,13 +58,7 @@ install_data(
   install_dir: '/usr/share/licenses/uksmd'
 )
 
-install_data(
-  [
-    'locale/pl.mo',
-  ],
-  rename : 'uksmdstats.mo',
-  install_dir: '/usr/share/locale/pl/LC_MESSAGES'
-)
+subdir('locale')
 
 project_target = executable(
   meson.project_name(),
