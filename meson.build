@@ -60,7 +60,8 @@ install_data(
   [
     'locale/pl.mo',
   ],
-  install_dir: '/usr/share/locale/pl/LC_MESSAGES/uksmdstats.mo'
+  rename : 'uksmdstats.mo',
+  install_dir: '/usr/share/locale/pl/LC_MESSAGES'
 )
 
 project_target = executable(
