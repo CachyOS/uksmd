@@ -1,0 +1,64 @@
+# ========================
+# Powered by CachyOS Team
+# ========================
+# uksmdstats - russian translation
+# This file is distributed under the GPL license.
+# CachyOS Team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"POT-Creation-Date: 2023-07-08 13:00+0100\n"
+"PO-Revision-Date: 2023-07-08 18:04+0400\n"
+"Last-Translator: Vladislav Nepogodin <vnepogodin>\n"
+"Language-Team: \n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.3.2\n"
+
+#
+#: myscript:10
+#, sh-format
+msgid "Full scans"
+msgstr "Полных сканирований"
+
+msgid "Interval"
+msgstr "Интервал"
+
+msgid "Max page sharing ratio"
+msgstr "Максимальный коэффициент общих страниц"
+
+msgid "Pages to scan"
+msgstr "Страниц для сканирования"
+
+msgid "Pages over ratio"
+msgstr "Соотношение страниц к объему"
+
+msgid "Duplicated pages"
+msgstr "Дублированные страницы"
+
+msgid "Use zero pages"
+msgstr "Использовать нулевые страницы"
+
+msgid "Sharing/shared ratio"
+msgstr "Коэффициент общего/разделеного пользования"
+
+msgid "Unshared/sharing ratio"
+msgstr "Соотношение необщего/общего пользования"
+
+msgid "Pages sharing"
+msgstr "Распределение страниц"
+
+msgid "Pages shared"
+msgstr "Общих страниц"
+
+msgid "Pages unshared"
+msgstr "Необщих страниц"
+
+msgid "General profit"
+msgstr "Общий профит"
+
+msgid "The kernel you are using does not support"
+msgstr "Используемое вами ядро не поддерживает"
