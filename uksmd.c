@@ -64,6 +64,7 @@ static long __NR_process_ksm_status = -1;
 static const char* incompatible_tasks[] =
 {
 	"mariadbd",
+	"p2pool",
 };
 
 static int ksm_ctl(bool _enable)
