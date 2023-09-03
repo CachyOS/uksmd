@@ -1,0 +1,6 @@
+option(
+  'systemd',
+  type: 'feature',
+  value: 'auto',
+  description: 'sd-notify support via libsystemd and install systemd unit files'
+)

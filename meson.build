@@ -21,7 +21,7 @@ build_args = [
 ]
 
 i18n = import('i18n')
-systemd = dependency('systemd', required: false)
+systemd = dependency('systemd', required: get_option('systemd'))
 gettext_package = 'uksmdstats'
 
 if systemd.found()
