@@ -55,7 +55,7 @@ install_data(
     'COPYING',
   ],
   rename : 'LICENSE',
-  install_dir: '/usr/share/licenses/uksmd'
+  install_dir : get_option('datadir') / 'licenses' / 'uksmd'
 )
 
 subdir('locale')
