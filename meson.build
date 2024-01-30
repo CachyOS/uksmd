@@ -27,12 +27,7 @@ gettext_package = 'uksmdstats'
 if systemd.found()
   systemd_system_unit_dir = systemd.get_variable(pkgconfig : 'systemdsystemunitdir')
 
-  install_data(
-    [
-      'uksmd.service',
-    ],
-    install_dir: systemd_system_unit_dir
-  )
+  install_data('uksmd.service', install_dir: systemd_system_unit_dir)
 
   project_dependencies += [
     dependency('libsystemd')
@@ -43,12 +38,7 @@ if systemd.found()
   ]
 endif
 
-install_data(
-  [
-    'uksmdstats',
-  ],
-  install_dir: '/usr/bin'
-)
+install_data('uksmdstats', install_dir: '/usr/bin')
 
 install_data(
   [
