@@ -38,6 +38,22 @@ if systemd.found()
   ]
 endif
 
+libalpm = dependency('libalpm', required: get_option('libalpm'))
+
+if libalpm.found() and systemd.found()
+  install_data('uksmd-systemd-restart', install_dir: '/usr/share/libalpm/scripts')
+
+  install_data('90-uksmd-upgrade.hook', install_dir: '/usr/share/libalpm/hooks')
+
+  project_dependencies += [
+    dependency('libsystemd', 'libalpm')
+  ]
+
+  build_args += [
+    '-DHAVE_SYSTEMD',
+  ]
+endif
+
 install_data('uksmdstats', install_dir: '/usr/bin')
 
 install_data(

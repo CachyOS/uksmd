@@ -1,0 +1,16 @@
+[Trigger]
+Type = Path
+Operation = Upgrade
+Target = usr/bin/uksmdstats
+Target = usr/lib/systemd/system/uksmd.service
+
+[Trigger]
+Type = Package
+Operation = Upgrade
+Target = uksmd-git
+
+[Action]
+Description = Checking uksmd...
+When = PostTransaction
+Exec = /usr/share/libalpm/scripts/uksmd-systemd-restart
+NeedsTargets
