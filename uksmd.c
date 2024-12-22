@@ -159,7 +159,7 @@ static size_t pids_index(const enum pids_item _items[], size_t _items_len, int _
 }
 
 #define PKSM_PIDS_VAL(name, type) \
-	(PIDS_VAL(pids_index(items, ARRAY_SIZE(items), name), type, stack, info))
+	(PIDS_VAL(pids_index(items, ARRAY_SIZE(items), name), type, stack))
 
 static int kthread_niceness(const char* _name, int *_niceness)
 {
