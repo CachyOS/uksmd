@@ -26,7 +26,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#if defined __GLIBC__
 #include <sys/pidfd.h>
+#else
+#include <sys/syscall.h>
+#endif /* __GLIBC__ */
 #include <sys/resource.h>
 #if defined HAVE_SYSTEMD
 #include <systemd/sd-daemon.h>
@@ -106,6 +110,13 @@ static long process_ksm_status(int pidfd, unsigned int flags)
 {
 	return syscall(__NR_process_ksm_status, pidfd, flags);
 }
+
+#if !defined __GLIBC__
+static int pidfd_open(pid_t pid, unsigned int flags)
+{
+	return syscall(__NR_pidfd_open, pid, flags);
+}
+#endif /* __GLIBC__ */
 
 static long process_ksm(pid_t pid, enum pksm_action _action)
 {
