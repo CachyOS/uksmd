@@ -25,16 +25,16 @@ msgid "Full scans"
 msgstr "Komplette Scans"
 
 msgid "Interval"
-msgstr "Interval"
+msgstr "Intervall"
 
 msgid "Max page sharing ratio"
-msgstr "Maximale page sharing ratio"
+msgstr "Maximale Rate geteilter Seiten"
 
 msgid "Pages to scan"
 msgstr "Seiten zum Scannen"
 
 msgid "Pages over ratio"
-msgstr "Seiten über rate"
+msgstr "Seiten über Rate"
 
 msgid "Duplicated pages"
 msgstr "Doppelte Seiten"
@@ -61,4 +61,4 @@ msgid "General profit"
 msgstr "Allgemeine Ausbeute"
 
 msgid "The kernel you are using does not support"
-msgstr "Das Kernel Sie verwenden unterstützt nicht"
+msgstr "Der verwendete Kernel unterstützt nicht"
