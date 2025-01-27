@@ -1,3 +1,5 @@
+### The project will no longer be developed. We recommend using [cachyos-ksm-settings](https://github.com/CachyOS/CachyOS-PKGBUILDS/tree/master/cachyos-ksm-settings)
+
 uksmd
 =====
 
